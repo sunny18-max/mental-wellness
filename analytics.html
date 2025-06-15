@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌱 Wellness Analytics 🧘‍♂️📊</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-bold d-flex align-items-center" href="index.html">
+      <span class="me-2">🌱</span>WellnessTracker
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="index.html#checkin">Check-In</a></li>
+        <li class="nav-item"><a class="nav-link active" href="analytics.html">Analytics</a></li>
+      </ul>
+      <div class="ms-3 theme-toggle" id="themeToggle">
+        🌓
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-5">
+  <div class="text-center mb-5">
+    <h1 class="display-4 fw-bold">Your Wellness Analytics</h1>
+    <p class="lead text-muted">Visual insights into your patterns and trends</p>
+  </div>
+  
+  <!-- Summary Cards -->
+  <div class="row mb-5" id="summary">
+    <!-- Will be filled by JavaScript -->
+  </div>
+  
+  <!-- Mood Chart -->
+  <div class="card mb-5 shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5>Mood Distribution</h5>
+    </div>
+    <div class="card-body">
+      <div class="chart-container" style="height: 300px;">
+        <canvas id="moodChart"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Stress vs Sleep Chart -->
+  <div class="card mb-5 shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5>Stress vs Sleep Correlation</h5>
+    </div>
+    <div class="card-body">
+      <div class="chart-container" style="height: 300px;">
+        <canvas id="stressSleepChart"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Trend Chart -->
+  <div class="card mb-5 shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5>Weekly Trends</h5>
+    </div>
+    <div class="card-body">
+      <div class="chart-container" style="height: 350px;">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Insights -->
+  <div class="card mb-5 shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5>Personalized Insights</h5>
+    </div>
+    <div class="card-body">
+      <div class="row" id="insightsContent">
+        
+      </div>
+    </div>
+  </div>
+  
+  <!-- Gratitude Entries -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5>Recent Gratitude Entries</h5>
+    </div>
+    <div class="card-body">
+      <div class="row" id="gratitudeEntries">
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    
+
+document.addEventListener('DOMContentLoaded', function() {
+ 
+  const wellnessData = JSON.parse(sessionStorage.getItem('wellnessData')) || { entries: [] };
+  
+  if (wellnessData.entries.length === 0) {
+ 
+    document.getElementById('summary').innerHTML = `
+      <div class="col-12">
+        <div class="alert alert-info">No entries yet. Complete your first check-in to see analytics.</div>
+      </div>
+    `;
+    return;
+  }
+  
+
+  updateSummary(wellnessData);
+  createMoodChart(wellnessData);
+  createStressSleepChart(wellnessData);
+  createTrendChart(wellnessData);
+  updateInsights(wellnessData);
+  updateGratitudeEntries(wellnessData);
+});  
+
+  let wellnessData = {
+    entries: [
+      { date: new Date(Date.now() - 6 * 86400000).toISOString(), mood: 'happy', stress: 3, sleep: 7.5, energy: 7, gratitude: 'The sunshine and my morning coffee' },
+      { date: new Date(Date.now() - 5 * 86400000).toISOString(), mood: 'okay', stress: 5, sleep: 6, energy: 5, gratitude: 'A productive work meeting' },
+      { date: new Date(Date.now() - 4 * 86400000).toISOString(), mood: 'happy', stress: 2, sleep: 8, energy: 8, gratitude: 'Dinner with friends' },
+      { date: new Date(Date.now() - 3 * 86400000).toISOString(), mood: 'anxious', stress: 7, sleep: 5.5, energy: 4, gratitude: 'Finishing a difficult task' },
+      { date: new Date(Date.now() - 2 * 86400000).toISOString(), mood: 'sad', stress: 6, sleep: 7, energy: 5, gratitude: 'A kind message from a colleague' },
+      { date: new Date(Date.now() - 1 * 86400000).toISOString(), mood: 'okay', stress: 4, sleep: 7, energy: 6, gratitude: 'Time to read a book' },
+    ]
+  };
+
+
+  let moodChart = null;
+  let stressSleepChart = null;
+  let trendChart = null;
+
+  document.addEventListener('DOMContentLoaded', function() {
+  
+    const sessionData = sessionStorage.getItem('wellnessData');
+    if (sessionData) {
+      wellnessData = JSON.parse(sessionData);
+    }
+    
+
+    updateSummary();
+    createMoodChart();
+    createStressSleepChart();
+    createTrendChart();
+    updateInsights();
+    updateGratitudeEntries();
+    
+
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+      themeToggle.addEventListener('click', toggleTheme);
+    }
+    
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+      document.documentElement.setAttribute('data-bs-theme', 'dark');
+    }
+  });
+
+  
+  function createMoodChart() {
+    const moodCounts = getMoodCounts();
+    const moodCtx = document.getElementById('moodChart').getContext('2d');
+    
+    moodChart = new Chart(moodCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Happy', 'Okay', 'Sad', 'Anxious', 'Angry'],
+        datasets: [{
+          data: [
+            moodCounts.happy || 0,
+            moodCounts.okay || 0,
+            moodCounts.sad || 0,
+            moodCounts.anxious || 0,
+            moodCounts.angry || 0
+          ],
+          backgroundColor: [
+            '#2dce89',
+            '#11cdef',
+            '#f5365c',
+            '#fb6340',
+            '#5e72e4'
+          ],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.raw || 0;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                return `${label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
+        },
+        cutout: '70%'
+      }
+    });
+  }
+
+  function createStressSleepChart() {
+    const weekData = getWeekData();
+    const stressSleepData = weekData
+      .filter(entry => entry !== null && !isNaN(entry.sleep) && !isNaN(entry.stress))
+      .map(entry => ({
+        x: entry.sleep,
+        y: entry.stress,
+        date: entry.date
+      }));
+    
+    const stressSleepCtx = document.getElementById('stressSleepChart').getContext('2d');
+    
+    stressSleepChart = new Chart(stressSleepCtx, {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: 'Stress vs Sleep',
+          data: stressSleepData,
+          backgroundColor: '#5e72e4',
+          pointRadius: 6,
+          pointHoverRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Sleep Hours'
+            },
+            min: 0,
+            max: 12
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Stress Level'
+            },
+            min: 1,
+            max: 10
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const date = new Date(context.raw.date);
+                const formattedDate = date.toLocaleDateString();
+                return [
+                  `Date: ${formattedDate}`,
+                  `Stress: ${context.parsed.y}`,
+                  `Sleep: ${context.parsed.x} hours`
+                ];
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function createTrendChart() {
+    const weekData = getWeekData();
+    const dates = getLastSevenDays().map(date => {
+      const d = new Date(date);
+      return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    });
+    
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    
+    trendChart = new Chart(trendCtx, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [
+          {
+            label: 'Mood',
+            data: weekData.map(entry => {
+              if (!entry) return null;
+              const moodValues = { happy: 4, okay: 3, sad: 2, anxious: 1, angry: 0 };
+              return moodValues[entry.mood];
+            }),
+            borderColor: '#2dce89',
+            backgroundColor: 'rgba(45, 206, 137, 0.1)',
+            tension: 0.3,
+            fill: true,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Stress',
+            data: weekData.map(entry => entry ? entry.stress : null),
+            borderColor: '#f5365c',
+            backgroundColor: 'rgba(245, 54, 92, 0.1)',
+            tension: 0.3,
+            fill: false,
+            yAxisID: 'y1'
+          },
+          {
+            label: 'Sleep',
+            data: weekData.map(entry => entry ? entry.sleep : null),
+            borderColor: '#11cdef',
+            backgroundColor: 'rgba(17, 205, 239, 0.1)',
+            tension: 0.3,
+            fill: false,
+            yAxisID: 'y2'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        scales: {
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Mood'
+            },
+            min: 0,
+            max: 4,
+            ticks: {
+              callback: function(value) {
+                const moodLabels = { 0: 'Angry', 1: 'Anxious', 2: 'Sad', 3: 'Okay', 4: 'Happy' };
+                return moodLabels[value];
+              }
+            }
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            title: {
+              display: true,
+              text: 'Stress Level'
+            },
+            min: 1,
+            max: 10,
+            grid: {
+              drawOnChartArea: false,
+            },
+          },
+          y2: {
+            type: 'linear',
+            display: false,
+            min: 0,
+            max: 12,
+            grid: {
+              drawOnChartArea: false,
+            },
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label === 'Mood') {
+                  const moodLabels = { 0: 'Angry', 1: 'Anxious', 2: 'Sad', 3: 'Okay', 4: 'Happy' };
+                  label += ': ' + moodLabels[context.raw];
+                } else {
+                  label += ': ' + context.raw;
+                  if (label.includes('Sleep')) label += ' hours';
+                }
+                return label;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+ 
+  function getLastSevenDays() {
+    const dates = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+    return dates;
+  }
+
+  function getWeekData() {
+    const lastSevenDays = getLastSevenDays();
+    return lastSevenDays.map(day => {
+      const entry = wellnessData.entries.find(e => 
+        new Date(e.date).toISOString().split('T')[0] === day
+      );
+      return entry || null;
+    });
+  }
+
+  function getMoodCounts() {
+    const counts = {
+      happy: 0,
+      okay: 0,
+      sad: 0,
+      anxious: 0,
+      angry: 0
+    };
+    
+    wellnessData.entries.forEach(entry => {
+      if (entry && counts.hasOwnProperty(entry.mood)) {
+        counts[entry.mood]++;
+      }
+    });
+    
+    return counts;
+  }
+
+  
+  function updateSummary() {
+    const summaryContainer = document.getElementById('summary');
+    
+    if (wellnessData.entries.length === 0) {
+      summaryContainer.innerHTML = `
+        <div class="col-12">
+          <div class="alert alert-info">No entries yet. Complete your first check-in to see your stats.</div>
+        </div>
+      `;
+      return;
+    }
+    
+    
+    const lastWeekEntries = wellnessData.entries.slice(-7);
+    
+    const totalStress = lastWeekEntries.reduce((sum, entry) => sum + entry.stress, 0);
+    const totalSleep = lastWeekEntries.reduce((sum, entry) => sum + entry.sleep, 0);
+    const totalEnergy = lastWeekEntries.reduce((sum, entry) => sum + entry.energy, 0);
+    
+    const happyDays = lastWeekEntries.filter(entry => entry.mood === 'happy').length;
+    
+    const avgStress = (totalStress / lastWeekEntries.length).toFixed(1);
+    const avgSleep = (totalSleep / lastWeekEntries.length).toFixed(1);
+    const avgEnergy = (totalEnergy / lastWeekEntries.length).toFixed(1);
+    const happyPercentage = Math.round((happyDays / lastWeekEntries.length) * 100);
+    
+   
+    const stressColor = avgStress > 6 ? 'danger' : avgStress > 3 ? 'warning' : 'success';
+    const sleepColor = avgSleep < 6 ? 'danger' : avgSleep < 7 ? 'warning' : 'success';
+    const energyColor = avgEnergy < 4 ? 'danger' : avgEnergy < 6 ? 'warning' : 'success';
+    
+    summaryContainer.innerHTML = `
+      <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card card-stat h-100">
+          <div class="card-body text-center">
+            <div class="stat-icon mb-3 text-${stressColor}">😰</div>
+            <h3 class="card-title">${avgStress}/10</h3>
+            <p class="card-text">Average Stress</p>
+            <div class="progress">
+              <div class="progress-bar bg-${stressColor}" style="width: ${avgStress * 10}%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card card-stat h-100">
+          <div class="card-body text-center">
+            <div class="stat-icon mb-3 text-${sleepColor}">😴</div>
+            <h3 class="card-title">${avgSleep}h</h3>
+            <p class="card-text">Average Sleep</p>
+            <div class="progress">
+              <div class="progress-bar bg-${sleepColor}" style="width: ${(avgSleep / 9) * 100}%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card card-stat h-100">
+          <div class="card-body text-center">
+            <div class="stat-icon mb-3 text-${energyColor}">⚡</div>
+            <h3 class="card-title">${avgEnergy}/10</h3>
+            <p class="card-text">Average Energy</p>
+            <div class="progress">
+              <div class="progress-bar bg-${energyColor}" style="width: ${avgEnergy * 10}%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card card-stat h-100">
+          <div class="card-body text-center">
+            <div class="stat-icon mb-3 text-primary">😊</div>
+            <h3 class="card-title">${happyPercentage}%</h3>
+            <p class="card-text">Happy Days</p>
+            <div class="progress">
+              <div class="progress-bar bg-success" style="width: ${happyPercentage}%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function updateInsights() {
+    const insightsContainer = document.getElementById('insightsContent');
+    
+    if (wellnessData.entries.length < 3) {
+      insightsContainer.innerHTML = `
+        <div class="col-12">
+          <div class="alert alert-light">Complete a few more check-ins to generate personalized insights.</div>
+        </div>
+      `;
+      return;
+    }
+    
+    
+    const lastWeekEntries = wellnessData.entries.slice(-7);
+    const avgStress = lastWeekEntries.reduce((sum, entry) => sum + entry.stress, 0) / lastWeekEntries.length;
+    const avgSleep = lastWeekEntries.reduce((sum, entry) => sum + entry.sleep, 0) / lastWeekEntries.length;
+    const happyDays = lastWeekEntries.filter(entry => entry.mood === 'happy').length;
+    
+    const insights = [];
+    
+   
+    if (avgStress > 7) {
+      insights.push({
+        icon: '😰',
+        title: 'High Stress Levels',
+        content: 'Your stress levels have been consistently high. Consider incorporating relaxation techniques like deep breathing or meditation.',
+        color: 'danger'
+      });
+    } else if (avgStress > 4) {
+      insights.push({
+        icon: '🧘‍♂️',
+        title: 'Moderate Stress',
+        content: 'Your stress levels are moderate. Regular physical activity and maintaining social connections can help manage stress.',
+        color: 'warning'
+      });
+    } else {
+      insights.push({
+        icon: '😌',
+        title: 'Low Stress',
+        content: 'Great job keeping your stress levels low! Continue practicing whatever stress-management techniques are working for you.',
+        color: 'success'
+      });
+    }
+    
+   
+    if (avgSleep < 6) {
+      insights.push({
+        icon: '😴',
+        title: 'Insufficient Sleep',
+        content: "You're getting less than the recommended 7-9 hours of sleep. Try establishing a consistent bedtime routine.",
+        color: 'danger'
+      });
+    } else if (avgSleep < 7) {
+      insights.push({
+        icon: '🛌',
+        title: 'Slightly Low Sleep',
+        content: 'Your sleep duration is slightly below optimal. Consider going to bed 30 minutes earlier.',
+        color: 'warning'
+      });
+    } else {
+      insights.push({
+        icon: '👍',
+        title: 'Healthy Sleep',
+        content: "You're getting a healthy amount of sleep! This contributes positively to your mood and energy levels.",
+        color: 'success'
+      });
+    }
+    
+   
+    if (happyDays >= 5) {
+      insights.push({
+        icon: '😊',
+        title: 'Positive Mood Trend',
+        content: "You've reported mostly happy moods recently. Reflect on what activities contribute to these positive feelings.",
+        color: 'success'
+      });
+    } else if (happyDays >= 3) {
+      insights.push({
+        icon: '😐',
+        title: 'Mixed Moods',
+        content: 'Your mood has been varied. Consider journaling to identify patterns or triggers for different moods.',
+        color: 'warning'
+      });
+    } else {
+      insights.push({
+        icon: '🤔',
+        title: 'Challenging Moods',
+        content: "You've had several challenging days recently. Reach out to friends or professionals for support if needed.",
+        color: 'danger'
+      });
+    }
+    
+   
+    if (lastWeekEntries.length >= 3) {
+      const stressSleepCorrelation = calculateCorrelation(
+        lastWeekEntries.map(e => e.sleep),
+        lastWeekEntries.map(e => e.stress)
+      );
+      
+      if (stressSleepCorrelation < -0.5) {
+        insights.push({
+          icon: '📉',
+          title: 'Sleep-Stress Connection',
+          content: 'Your data shows that better sleep is strongly associated with lower stress. Prioritizing sleep may significantly improve your wellbeing.',
+          color: 'info'
+        });
+      }
+    }
+    
+
+    insightsContainer.innerHTML = insights.map(insight => `
+      <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100 bg-${insight.color}-subtle border-${insight.color}">
+          <div class="card-body text-center">
+            <div class="fs-1 mb-3">${insight.icon}</div>
+            <h5 class="card-title">${insight.title}</h5>
+            <p class="card-text">${insight.content}</p>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function updateGratitudeEntries() {
+    const gratitudeContainer = document.getElementById('gratitudeEntries');
+    
+    const lastFiveEntries = [...wellnessData.entries]
+      .reverse()
+      .slice(0, 5)
+      .filter(entry => entry.gratitude && entry.gratitude.trim() !== '');
+    
+    if (lastFiveEntries.length === 0) {
+      gratitudeContainer.innerHTML = `
+        <div class="col-12">
+          <div class="alert alert-info">No gratitude entries yet. Add your first one today!</div>
+        </div>
+      `;
+      return;
+    }
+    
+    gratitudeContainer.innerHTML = lastFiveEntries.map(entry => {
+      const date = new Date(entry.date);
+      const formattedDate = date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      
+      
+      const moodEmoji = {
+        happy: '😊',
+        okay: '😐',
+        sad: '😔',
+        anxious: '😟',
+        angry: '😠'
+      }[entry.mood] || '🤔';
+      
+      return `
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card h-100 gratitude-card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted">${formattedDate}</small>
+                <span class="badge bg-primary">${moodEmoji} ${entry.mood.charAt(0).toUpperCase() + entry.mood.slice(1)}</span>
+              </div>
+              <p class="card-text">"${entry.gratitude}"</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  
+  function calculateCorrelation(x, y) {
+    const n = x.length;
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+    
+    for (let i = 0; i < n; i++) {
+      sumX += x[i];
+      sumY += y[i];
+      sumXY += x[i] * y[i];
+      sumX2 += x[i] * x[i];
+      sumY2 += y[i] * y[i];
+    }
+    
+    const numerator = sumXY - (sumX * sumY / n);
+    const denominator = Math.sqrt((sumX2 - sumX * sumX / n) * (sumY2 - sumY * sumY / n));
+    
+    return denominator === 0 ? 0 : numerator / denominator;
+  }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-bs-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-bs-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  }
+  
+</script>
+</body>
+</html>
