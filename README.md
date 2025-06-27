@@ -1,6 +1,8 @@
 # 🌱 Wellness Tracker
 
 A beautiful, privacy-focused web app to track your mental wellbeing, mood patterns, and daily gratitude.
+![image](https://github.com/user-attachments/assets/dda982e4-2092-4088-bf27-d2f0602f1d5c)
+
 
 ## Features ✨
 
