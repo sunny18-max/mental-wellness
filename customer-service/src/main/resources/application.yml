@@ -1,0 +1,25 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: customer-service
+  datasource:
+    url: jdbc:postgresql://localhost:5544/customer_db
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  secret: ${JWT_SECRET:change-this-to-a-long-random-secret-key-of-at-least-256-bits}
+  expiration-ms: 86400000
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
